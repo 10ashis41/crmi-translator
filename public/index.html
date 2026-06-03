@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Church Live Translator</title>
+  <style>
+    :root {
+      --bg: #0f172a; --panel: #1e293b; --panel2: #334155;
+      --text: #e2e8f0; --muted: #94a3b8; --accent: #38bdf8;
+      --green: #22c55e; --red: #ef4444; --amber: #f59e0b;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: var(--bg); color: var(--text); min-height: 100vh;
+      padding: env(safe-area-inset-top) 16px 24px;
+    }
+    header { display: flex; align-items: center; justify-content: space-between; padding: 16px 0; flex-wrap: wrap; gap: 8px; }
+    h1 { font-size: 1.25rem; margin: 0; }
+    .controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 16px; }
+    button.primary {
+      font-size: 1.1rem; font-weight: 600; padding: 14px 28px; border-radius: 12px;
+      border: none; cursor: pointer; color: #052e16; background: var(--green);
+      transition: background .15s; min-width: 140px;
+    }
+    button.primary.recording { background: var(--red); color: #fff; }
+    button.primary:disabled { opacity: .5; cursor: not-allowed; }
+    button.secondary {
+      font-size: 1rem; font-weight: 600; padding: 13px 20px; border-radius: 12px;
+      border: 1px solid var(--accent); cursor: pointer; color: var(--accent); background: transparent;
+    }
+    button.secondary:disabled { opacity: .5; cursor: not-allowed; }
+    .syscheck { margin-bottom: 16px; font-size: .9rem; color: var(--muted); min-height: 1.2em; }
+    .syscheck .ok { color: var(--green); } .syscheck .bad { color: var(--red); }
+    .toggle { display: inline-flex; border: 1px solid var(--panel2); border-radius: 10px; overflow: hidden; }
+    .toggle button {
+      border: none; background: var(--panel); color: var(--muted);
+      padding: 12px 18px; cursor: pointer; font-size: 1rem;
+    }
+    .toggle button.active { background: var(--accent); color: #042f3c; font-weight: 600; }
+    label.field { display: flex; flex-direction: column; gap: 4px; font-size: .8rem; color: var(--muted); }
+    select, input[type=range] { accent-color: var(--accent); }
+    select { background: var(--panel); color: var(--text); border: 1px solid var(--panel2); border-radius: 8px; padding: 10px; min-width: 180px; }
+    .statusbar { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 16px; font-size: .85rem; }
+    .stat { display: flex; align-items: center; gap: 6px; color: var(--muted); }
+    .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--panel2); }
+    .dot.on { background: var(--green); box-shadow: 0 0 8px var(--green); }
+    .dot.busy { background: var(--amber); box-shadow: 0 0 8px var(--amber); }
+    .dot.err { background: var(--red); box-shadow: 0 0 8px var(--red); }
+    .panels { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 720px) { .panels { grid-template-columns: 1fr; } }
+    .panel { background: var(--panel); border-radius: 14px; padding: 16px; min-height: 220px; display: flex; flex-direction: column; }
+    .panel h2 { font-size: .8rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 0 0 10px; }
+    .transcript { flex: 1; overflow-y: auto; font-size: 1.15rem; line-height: 1.5; max-height: 50vh; }
+    .transcript .line { padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,.05); }
+    .transcript .pending { color: var(--muted); font-style: italic; }
+    #russian.rtl, #source.rtl { direction: rtl; text-align: right; }
+    .error { color: var(--red); margin-top: 12px; min-height: 1.2em; font-size: .9rem; }
+    footer { margin-top: 20px; color: var(--muted); font-size: .8rem; }
+    .vol { display: flex; align-items: center; gap: 8px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>⛪ Church Live Translator <span style="color:var(--muted);font-weight:400">→ Russian</span></h1>
+    <div class="toggle" id="langToggle" title="Input (spoken) language">
+      <button data-lang="en" class="active">English</button>
+      <button data-lang="ar">العربية (Arabic)</button>
+    </div>
+  </header>
+
+  <div class="controls">
+    <button id="startStop" class="primary">Start</button>
+    <button id="testBtn" class="secondary" title="Send a sample phrase through translate → speak and play it back">🔎 Test Pipeline</button>
+
+    <label class="field">Output device (to transmitter)
+      <select id="outputDevice"><option value="">Default output</option></select>
+    </label>
+
+    <label class="field">Volume
+      <span class="vol"><input id="volume" type="range" min="0" max="1" step="0.05" value="1" /><span id="volVal">100%</span></span>
+    </label>
+  </div>
+
+  <div class="statusbar">
+    <span class="stat"><span class="dot" id="dotMic"></span> Microphone</span>
+    <span class="stat"><span class="dot" id="dotProc"></span> Processing <span id="queueCount"></span></span>
+    <span class="stat"><span class="dot" id="dotAudio"></span> Audio out</span>
+    <span class="stat" id="clock"></span>
+  </div>
+
+  <div class="syscheck" id="syscheck"></div>
+
+  <div class="panels">
+    <div class="panel">
+      <h2 id="sourceLabel">English transcript</h2>
+      <div class="transcript" id="source"></div>
+    </div>
+    <div class="panel">
+      <h2>Russian translation</h2>
+      <div class="transcript" id="russian"></div>
+    </div>
+  </div>
+
+  <div class="error" id="error"></div>
+
+  <footer>
+    Audio is captured in 3-second segments, transcribed (OpenAI Whisper), translated (Google Translate),
+    and voiced in Russian (ElevenLabs Flash v2.5). All API keys stay on the server.
+  </footer>
+
+  <script src="/app.js"></script>
+</body>
+</html>

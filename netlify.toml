@@ -1,0 +1,33 @@
+# Netlify configuration for the church translation app.
+# Static operator page is served from /public; the three API endpoints are
+# Netlify Functions exposed under /api/* via the redirect below.
+
+[build]
+  publish = "public"
+  functions = "netlify/functions"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+[functions]
+  node_bundler = "esbuild"
+
+# `netlify dev` — serve the static page + functions locally at http://localhost:8888
+# with /api/* routing identical to production. Reads keys from a local .env file.
+[dev]
+  framework = "#static"   # no build tool; just serve /public
+  publish = "public"
+  functions = "netlify/functions"
+  port = 8888
+  targetPort = 8888
+  autoLaunch = false
+
+# Friendly REST-style routes -> Netlify Functions.
+#   /api/transcribe -> netlify/functions/transcribe.mjs
+#   /api/translate  -> netlify/functions/translate.mjs
+#   /api/speak      -> netlify/functions/speak.mjs
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+  force = true
