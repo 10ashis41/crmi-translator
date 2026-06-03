@@ -1,4 +1,4 @@
-// Church Live Translator — operator client.
+// CRMI Live Translator — operator client.
 // Captures mic audio in 3s segments and runs each through:
 //   /api/transcribe (Whisper) -> /api/translate (Google) -> /api/speak (ElevenLabs)
 // then plays the Russian audio out the selected output device.

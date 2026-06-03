@@ -1,4 +1,4 @@
-# Church Live Translator (Netlify)
+# CRMI Live Translator (Netlify)
 
 Real-time spoken-language translation for a church service, running **entirely on
 Netlify** — a static operator page plus three serverless Netlify Functions. No VM,
