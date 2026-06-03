@@ -2,15 +2,15 @@
 # One-command smoke test: curl the deployed /api/health and report per-service status.
 #
 # Usage:
-#   ./smoke-test.sh                                   # defaults to church-translator.netlify.app
-#   ./smoke-test.sh https://church-translator.netlify.app
+#   ./smoke-test.sh                                   # defaults to crmi-translator.netlify.app
+#   ./smoke-test.sh https://crmi-translator.netlify.app
 #   ./smoke-test.sh http://localhost:8888             # against `netlify dev`
 #
 # Exit code: 0 if healthy, 1 otherwise (usable in CI / pre-service checks).
 
 set -uo pipefail
 
-BASE="${1:-https://church-translator.netlify.app}"
+BASE="${1:-https://crmi-translator.netlify.app}"
 BASE="${BASE%/}"
 URL="$BASE/api/health"
 

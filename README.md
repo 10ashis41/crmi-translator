@@ -38,7 +38,7 @@ server-side inside the functions, so nothing secret is ever sent to the browser.
 ## Project layout
 
 ```
-church-translator-netlify/
+crmi-translator-netlify/
 ├── netlify.toml                 # build + /api/* routing
 ├── package.json
 ├── .env.example
@@ -78,8 +78,8 @@ pass/fail summary. Exit code is `0` when healthy, `1` otherwise — handy as a
 pre-service check.
 
 ```bash
-./smoke-test.sh                                    # https://church-translator.netlify.app
-./smoke-test.sh https://church-translator.netlify.app
+./smoke-test.sh                                    # https://crmi-translator.netlify.app
+./smoke-test.sh https://crmi-translator.netlify.app
 ./smoke-test.sh http://localhost:8888              # against `netlify dev`
 ```
 
@@ -101,20 +101,20 @@ Add these in the Netlify dashboard at **Site configuration → Environment varia
 
 ## Deploy to Netlify
 
-This deploys to a **new** Netlify site named **`church-translator`**.
+This deploys to a **new** Netlify site named **`crmi-translator`**.
 
 ### One-time setup
 
 ```bash
-cd ~/church-translator-netlify
+cd ~/crmi-translator-netlify
 
 # 1. Authenticate the Netlify CLI (opens a browser)
 netlify login
 
-# 2. Create AND link a brand new site named "church-translator".
+# 2. Create AND link a brand new site named "crmi-translator".
 #    Site names are globally unique; if it's taken, pick another name
-#    (e.g. church-translator-<yourorg>) and use that everywhere below.
-netlify sites:create --name church-translator
+#    (e.g. crmi-translator-<yourorg>) and use that everywhere below.
+netlify sites:create --name crmi-translator
 
 # 3. Add the environment variables (or paste them in the dashboard)
 netlify env:set OPENAI_API_KEY           "sk-..."
@@ -129,8 +129,8 @@ netlify env:set ELEVENLABS_VOICE_ID      "..."
 netlify deploy --build --prod
 ```
 
-The site will be live at **https://church-translator.netlify.app**
-(or `https://<the-name-you-chose>.netlify.app` if `church-translator` was taken).
+The site will be live at **https://crmi-translator.netlify.app**
+(or `https://<the-name-you-chose>.netlify.app` if `crmi-translator` was taken).
 
 ### Local development
 
