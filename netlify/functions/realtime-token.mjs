@@ -41,11 +41,9 @@ export default async (req) => {
 
   // For English, raise the VAD threshold so only clear close-mic speech triggers a turn.
   // threshold (0.0–1.0, default 0.5): higher = less sensitive to background noise.
-  // max_speech_duration_ms: force a segment boundary every 6 s so long continuous
-  // speech is chopped into processable chunks rather than one giant utterance.
   const turnDetection = language === "en"
-    ? { type: "server_vad", threshold: 0.7, silence_duration_ms: 600, max_speech_duration_ms: 6000 }
-    : { type: "server_vad", silence_duration_ms: 500, max_speech_duration_ms: 6000 };
+    ? { type: "server_vad", threshold: 0.7, silence_duration_ms: 600 }
+    : { type: "server_vad", silence_duration_ms: 500 };
 
   const sessionConfig = {
     session: {

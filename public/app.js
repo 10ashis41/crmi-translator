@@ -35,6 +35,8 @@ let pc = null;                // RTCPeerConnection to OpenAI
 let dc = null;                // "oai-events" data channel (transcription events)
 let partialLine = null;       // live (pending) transcript line being filled by deltas
 let partialText = "";
+let partialTimer = null;      // setTimeout handle for client-side 6 s force-cut
+let forcedCut = false;        // true if we force-cut the current utterance at least once
 
 const textQueue = [];         // segments waiting to play (display only)
 let workerActive = false;
@@ -139,10 +141,11 @@ const PROFANITY_RE = /\b(?:f+u+c+k+(?:e[rd]|ing?|s|er)?|sh[i!1]+t+(?:s|t?ing?|te
 const ARABIC_PHONEME_RE = /\b(?:fa+k+|f[ae]+kk?|ni+k+|na+a+k+|zi+bb?|ku+ss?|khu+ss?|sharmou?ta?|manyak|ibn\s+(?:el\s+)?(?:kalb|sharmou?ta?|zibb?|ku+ss?))\b/i;
 
 // Returns true if the transcript should be silently dropped (English mode only).
-function shouldDropTranscript(text) {
+// allowShort: skip the word-count check for force-cut tails that are part of longer speech.
+function shouldDropTranscript(text, allowShort = false) {
   // 1. Minimum length: require at least 3 words to avoid single-word noise transcriptions.
   const words = text.trim().split(/\s+/).filter(Boolean);
-  if (words.length < 3) return true;
+  if (!allowShort && words.length < 3) return true;
 
   // 2. Non-Latin character check: drop if any character falls outside Basic Latin +
   //    Latin Supplement (U+0000-U+00FF), Latin Extended A/B (U+0100-U+024F),
@@ -214,20 +217,27 @@ function onRealtimeEvent(evt) {
     case "conversation.item.input_audio_transcription.delta": {
       // Incremental partial — show it live in a pending line.
       partialText += evt.delta || "";
-      if (!partialLine) partialLine = appendLine(sourceBox, "", "pending");
+      if (!partialLine) {
+        partialLine = appendLine(sourceBox, "", "pending");
+        startPartialTimer();   // begin 6-second client-side force-cut countdown
+      }
       partialLine.textContent = partialText;
       sourceBox.scrollTop = sourceBox.scrollHeight;
       break;
     }
     case "conversation.item.input_audio_transcription.completed": {
-      // Final transcript for this utterance.
-      const text = (evt.transcript || partialText || "").trim();
+      clearPartialTimer();
+      const wasForcedCut = forcedCut;
+      forcedCut = false;
+      // If we force-cut, partialText holds only the tail after the last cut point.
+      // Use that tail rather than the full utterance transcript (which we already queued).
+      // If no force-cut, use the authoritative full transcript from OpenAI.
+      const text = (wasForcedCut ? partialText : (evt.transcript || partialText || "")).trim();
       partialText = "";
-      // Apply English-mode filters — all synchronous, zero latency.
-      const drop = !text || (inputLang === "en" && shouldDropTranscript(text));
+      const drop = !text || (inputLang === "en" && shouldDropTranscript(text, wasForcedCut));
       if (partialLine) {
         if (drop) {
-          partialLine.remove();   // silently erase the pending line
+          partialLine.remove();
         } else {
           partialLine.textContent = text;
           partialLine.classList.remove("pending");
@@ -236,13 +246,48 @@ function onRealtimeEvent(evt) {
       } else if (!drop && text) {
         appendLine(sourceBox, text);
       }
-      if (!drop) { showError(""); enqueueTranscript(text); }   // -> translate -> speak
+      if (!drop) { showError(""); enqueueTranscript(text); }
       break;
     }
     case "error":
       showError("Realtime: " + (evt.error?.message || JSON.stringify(evt.error || evt)));
       break;
   }
+}
+
+// ---------- Client-side 6-second force-cut for long continuous speech --------
+// The OpenAI Realtime transcription API has no max-segment-duration parameter.
+// If speech continues unbroken for 6 s we force a cut ourselves so the pipeline
+// never stalls on a single giant utterance.
+
+function startPartialTimer() {
+  if (partialTimer) return;
+  partialTimer = setTimeout(forceSegmentCut, 6000);
+}
+
+function clearPartialTimer() {
+  if (partialTimer) { clearTimeout(partialTimer); partialTimer = null; }
+}
+
+function forceSegmentCut() {
+  partialTimer = null;
+  const cutText = partialText.trim();
+  // Only cut if we have at least 3 words — fewer likely means we just started.
+  if (cutText.split(/\s+/).filter(Boolean).length < 3) {
+    partialTimer = setTimeout(forceSegmentCut, 6000);  // wait another 6 s
+    return;
+  }
+  // Commit what we have to the translate→speak pipeline.
+  if (!(inputLang === "en" && shouldDropTranscript(cutText))) {
+    showError("");
+    enqueueTranscript(cutText);
+  }
+  // Seal the current display line; subsequent deltas will open a fresh one.
+  if (partialLine) { partialLine.classList.remove("pending"); partialLine = null; }
+  partialText = "";   // reset accumulator; tail deltas go into the fresh partial
+  forcedCut = true;
+  // Restart timer in case speech continues past this cut.
+  partialTimer = setTimeout(forceSegmentCut, 6000);
 }
 
 // ---------- Parallel pipeline: fetch immediately, play sequentially ----------
@@ -359,6 +404,8 @@ function stop() {
   stream = null;
   partialLine = null;
   partialText = "";
+  clearPartialTimer();
+  forcedCut = false;
   // Reset parallel pipeline state.
   playChain = Promise.resolve();
   activeSegments = 0;
