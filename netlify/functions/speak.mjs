@@ -45,6 +45,7 @@ export default async (req) => {
       body: JSON.stringify({
         text,
         model_id: MODEL,
+        speed: 1.3,
         voice_settings: { stability: 0.5, similarity_boost: 0.75 },
       }),
     });

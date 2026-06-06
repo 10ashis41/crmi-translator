@@ -22,6 +22,18 @@
   targetPort = 8888
   autoLaunch = false
 
+# Never let the operator page or its script be served stale (avoids old client
+# code lingering in a browser cache after a deploy).
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "no-store, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/app.js"
+  [headers.values]
+    Cache-Control = "no-store, max-age=0, must-revalidate"
+
 # Friendly REST-style routes -> Netlify Functions.
 #   /api/transcribe -> netlify/functions/transcribe.mjs
 #   /api/translate  -> netlify/functions/translate.mjs
