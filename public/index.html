@@ -26,11 +26,6 @@
     }
     button.primary.recording { background: var(--red); color: #fff; }
     button.primary:disabled { opacity: .5; cursor: not-allowed; }
-    button.secondary {
-      font-size: 1rem; font-weight: 600; padding: 13px 20px; border-radius: 12px;
-      border: 1px solid var(--accent); cursor: pointer; color: var(--accent); background: transparent;
-    }
-    button.secondary:disabled { opacity: .5; cursor: not-allowed; }
     .syscheck { margin-bottom: 16px; font-size: .9rem; color: var(--muted); min-height: 1.2em; }
     .syscheck .ok { color: var(--green); } .syscheck .bad { color: var(--red); }
     .toggle { display: inline-flex; border: 1px solid var(--panel2); border-radius: 10px; overflow: hidden; }
@@ -64,15 +59,15 @@
 <body>
   <header>
     <h1>⛪ CRMI Live Translator <span style="color:var(--muted);font-weight:400">→ Russian</span></h1>
-    <div class="toggle" id="langToggle" title="Input (spoken) language">
-      <button data-lang="en" class="active">English</button>
-      <button data-lang="ar">العربية (Arabic)</button>
-    </div>
+    <span style="font-size:.8rem;color:var(--muted);border:1px solid var(--panel2);border-radius:8px;padding:6px 12px;">English only</span>
   </header>
 
   <div class="controls">
     <button id="startStop" class="primary">Start</button>
-    <button id="testBtn" class="secondary" title="Send a sample phrase through translate → speak and play it back">🔎 Test Pipeline</button>
+
+    <label class="field">Input device (microphone)
+      <select id="inputDevice"><option value="">Default microphone</option></select>
+    </label>
 
     <label class="field">Output device (to transmitter)
       <select id="outputDevice"><option value="">Default output</option></select>
@@ -106,10 +101,12 @@
   <div class="error" id="error"></div>
 
   <footer>
-    Audio is captured in 3-second segments, transcribed (OpenAI Whisper), translated (Google Translate),
-    and voiced in Russian (ElevenLabs Flash v2.5). All API keys stay on the server.
+    Mic audio streams to Deepgram Nova-3 for continuous English transcription;
+    each phrase is translated (Google Translate) and voiced in Russian (ElevenLabs
+    Flash v2.5). Translation fires on natural sentence boundaries — no pause required.
+    API keys stay on the server; the browser uses a short-lived token.
   </footer>
 
-  <script src="/app.js"></script>
+  <script src="/app.js?v=20260606-nova3"></script>
 </body>
 </html>
