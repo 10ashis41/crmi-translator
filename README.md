@@ -5,16 +5,16 @@ Netlify** — a static operator page plus three serverless Netlify Functions. No
 no GPU, no servers to keep alive.
 
 ```
-Operator browser (mic, 3s segments)
-        │  multipart audio
+Operator browser (mic, continuous WebM/Opus stream)
+        │  100 ms audio chunks over WebSocket
         ▼
-  /api/transcribe ──► OpenAI Whisper        → English / Arabic text
+  wss://api.deepgram.com/v1/listen (Nova-3)  → English / Arabic text
+        │  final transcript (after 1 s silence)
+        ▼
+  /api/translate  ──► Google Translate v2    → Russian text
         │
         ▼
-  /api/translate  ──► Google Translate v2   → Russian text
-        │
-        ▼
-  /api/speak      ──► ElevenLabs Flash v2.5 → Russian MP3
+  /api/speak      ──► ElevenLabs Flash v2.5  → Russian MP3  (1.3× speed)
         │  audio/mpeg
         ▼
 Operator browser plays it out the selected output device
@@ -90,13 +90,13 @@ Add these in the Netlify dashboard at **Site configuration → Environment varia
 
 | Variable | Required | Description |
 |---|---|---|
-| `OPENAI_API_KEY` | ✅ | OpenAI key for the Whisper transcription API. |
+| `DEEPGRAM_API_KEY` | ✅ | Deepgram API key for Nova-3 streaming STT. Get one free at **console.deepgram.com** → *Create API Key*. |
 | `GOOGLE_TRANSLATE_API_KEY` | ✅ | Google Cloud API key with the **Cloud Translation API** enabled. |
 | `ELEVENLABS_API_KEY` | ✅ | ElevenLabs API key. |
 | `ELEVENLABS_VOICE_ID` | ✅ | ElevenLabs voice ID to speak the Russian audio. |
+| `DEEPGRAM_PROJECT_ID` | optional | Your Deepgram project UUID. Set this to skip the project-lookup API call on every Start click (saves ~100 ms). Find it in **console.deepgram.com** → *Settings*. |
 | `ELEVENLABS_MODEL` | optional | Defaults to `eleven_flash_v2_5`. |
 | `ELEVENLABS_OUTPUT_FORMAT` | optional | Defaults to `mp3_44100_128`. |
-| `WHISPER_MODEL` | optional | Defaults to `whisper-1`. |
 | `TARGET_LANG` | optional | Defaults to `ru`. |
 
 ## Deploy to Netlify
@@ -117,7 +117,7 @@ netlify login
 netlify sites:create --name crmi-translator
 
 # 3. Add the environment variables (or paste them in the dashboard)
-netlify env:set OPENAI_API_KEY           "sk-..."
+netlify env:set DEEPGRAM_API_KEY         "..."
 netlify env:set GOOGLE_TRANSLATE_API_KEY "AIza..."
 netlify env:set ELEVENLABS_API_KEY       "..."
 netlify env:set ELEVENLABS_VOICE_ID      "..."

@@ -26,7 +26,7 @@ function withTimeout(ms = 8000) {
 
 export default async (req) => {
   const env = {
-    OPENAI_API_KEY: !!process.env.OPENAI_API_KEY,
+    DEEPGRAM_API_KEY: !!process.env.DEEPGRAM_API_KEY,
     GOOGLE_TRANSLATE_API_KEY: !!process.env.GOOGLE_TRANSLATE_API_KEY,
     ELEVENLABS_API_KEY: !!process.env.ELEVENLABS_API_KEY,
     ELEVENLABS_VOICE_ID: !!process.env.ELEVENLABS_VOICE_ID,
@@ -38,16 +38,16 @@ export default async (req) => {
 
   const services = {};
 
-  // OpenAI — list models verifies the key works.
-  if (env.OPENAI_API_KEY) {
-    services.openai = await ping("openai", () => {
+  // Deepgram — list projects verifies the key works.
+  if (env.DEEPGRAM_API_KEY) {
+    services.deepgram = await ping("deepgram", () => {
       const t = withTimeout();
-      return fetch("https://api.openai.com/v1/models", {
-        headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}` },
+      return fetch("https://api.deepgram.com/v1/projects", {
+        headers: { Authorization: `Token ${process.env.DEEPGRAM_API_KEY}` },
         signal: t.signal,
       }).finally(t.done);
     });
-  } else services.openai = { ok: false, status: 0, detail: "OPENAI_API_KEY missing" };
+  } else services.deepgram = { ok: false, status: 0, detail: "DEEPGRAM_API_KEY missing" };
 
   // Google Translate — a tiny real translation verifies key + API enabled.
   if (env.GOOGLE_TRANSLATE_API_KEY) {
