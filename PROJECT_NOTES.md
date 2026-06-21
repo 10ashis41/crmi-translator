@@ -17,7 +17,8 @@ _Newest first. Auto-maintained by Claude Code._
 - **Live at**: https://crmi-translator.netlify.app — HEALTHY
 - **Deploy command**: `npx netlify-cli deploy --build --prod` (run from `~/crmi-translator-netlify`)
 - **Site**: `crmi-translator` (NOT `unrivaled-druid-5185ca` — that's a stale alias, do not use)
-- No git remote configured on this repo — deploy is CLI-only (not git-push-triggered).
+- GitHub repo: https://github.com/10ashis41/crmi-translator (private) — set up 2026-06-21.
+- Deploy is CLI-only (`npx netlify-cli deploy --build --prod`) — Netlify is not wired to auto-deploy on push.
 
 ### VM / GPU
 - The VM-based pipeline (`~/church-translator` — faster-whisper + Google Translate + ElevenLabs) is the **old approach**. Current production is Netlify-only; no VM needed.
