@@ -25,9 +25,13 @@ function withTimeout(ms = 8000) {
 }
 
 export default async (req) => {
+  // Translation now runs on Gemini; the function prefers GEMINI_API_KEY and
+  // falls back to the legacy GOOGLE_TRANSLATE_API_KEY. Either one satisfies the
+  // requirement, so report presence of whichever is configured.
+  const geminiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_TRANSLATE_API_KEY;
   const env = {
     DEEPGRAM_API_KEY: !!process.env.DEEPGRAM_API_KEY,
-    GOOGLE_TRANSLATE_API_KEY: !!process.env.GOOGLE_TRANSLATE_API_KEY,
+    GEMINI_API_KEY: !!geminiKey,
     ELEVENLABS_API_KEY: !!process.env.ELEVENLABS_API_KEY,
     ELEVENLABS_VOICE_ID: !!process.env.ELEVENLABS_VOICE_ID,
   };
@@ -49,20 +53,23 @@ export default async (req) => {
     });
   } else services.deepgram = { ok: false, status: 0, detail: "DEEPGRAM_API_KEY missing" };
 
-  // Google Translate — a tiny real translation verifies key + API enabled.
-  if (env.GOOGLE_TRANSLATE_API_KEY) {
-    services.googleTranslate = await ping("google", () => {
+  // Gemini — a tiny generateContent call verifies key + API enabled + billing
+  // (catches the 429 "prepayment credits depleted" case, not just a bad key).
+  if (geminiKey) {
+    services.gemini = await ping("gemini", () => {
       const t = withTimeout();
-      const params = new URLSearchParams({ key: process.env.GOOGLE_TRANSLATE_API_KEY });
-      const body = new URLSearchParams({ q: "test", source: "en", target: "ru", format: "text" });
-      return fetch(`https://translation.googleapis.com/language/translate/v2?${params}`, {
+      const model = process.env.GEMINI_MODEL || "gemini-2.5-flash-lite";
+      return fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`, {
         method: "POST",
-        headers: { "content-type": "application/x-www-form-urlencoded" },
-        body,
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ role: "user", parts: [{ text: "ping" }] }],
+          generationConfig: { maxOutputTokens: 1 },
+        }),
         signal: t.signal,
       }).finally(t.done);
     });
-  } else services.googleTranslate = { ok: false, status: 0, detail: "GOOGLE_TRANSLATE_API_KEY missing" };
+  } else services.gemini = { ok: false, status: 0, detail: "GEMINI_API_KEY / GOOGLE_TRANSLATE_API_KEY missing" };
 
   // ElevenLabs — fetch the configured voice verifies BOTH the key and the voice ID.
   if (env.ELEVENLABS_API_KEY && env.ELEVENLABS_VOICE_ID) {
