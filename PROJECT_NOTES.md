@@ -8,11 +8,14 @@ _Newest first. Auto-maintained by Claude Code._
 ### Pipeline switched to Arabic → Russian
 - **STT language lock**: Deepgram `language` param changed `en` → `ar`; source box set to RTL, label updated to "Arabic transcript"
 - **Script-lock filter**: `inputLang === "ar"` path was already in place — drops any Latin-only transcript (no Arabic-script chars); now the active path
+- **Confidence gate added** (`ARABIC_CONFIDENCE_MIN = 0.7`): Deepgram returns a confidence score per utterance; English speech force-fitted into Arabic model scores ~0.3–0.6, real Arabic scores ~0.8–0.99. Segments below 0.7 are silently dropped before translate/speak. Threshold is a named constant in `app.js` for easy tuning.
 - **Gemini system prompt** rewritten for Arabic input:
   - "You are a professional church interpreter. Translate the following Arabic text to natural, fluent Russian…"
   - Idiom/proverb guardrail: find closest Russian equivalent; Arabic example: `الجمل لا يرى حدبته` → `Чья бы корова мычала, а твоя бы молчала`
   - "Return only the translated text with no explanation."
-- **Rollback point**: git `b1ade2c` (English→Russian pipeline with idiom guardrails)
+- **Segment-pacing logic unchanged**: pipeline fires on `speech_final` (Deepgram sentence boundary, no silence needed) OR `is_final` (300 ms VAD), whichever comes first — same as English mode, prevents large segments queuing up.
+- **Arabic singing**: use the Mute button; KeepAlive holds the socket open so resuming is instant.
+- **Rollback point**: git `b1ade2c` (English→Russian pipeline); latest deploy: `6a4aac86`
 
 ### Translation engine migrated to Gemini 2.5 Flash-Lite (2026-07-04)
 - Replaced Google Translate v2 with Gemini 2.5 Flash-Lite streaming (`streamGenerateContent` SSE)
