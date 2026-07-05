@@ -3,6 +3,29 @@ _Newest first. Auto-maintained by Claude Code._
 
 ---
 
+## 2026-07-05
+
+### Pipeline switched to Arabic → Russian
+- **STT language lock**: Deepgram `language` param changed `en` → `ar`; source box set to RTL, label updated to "Arabic transcript"
+- **Script-lock filter**: `inputLang === "ar"` path was already in place — drops any Latin-only transcript (no Arabic-script chars); now the active path
+- **Gemini system prompt** rewritten for Arabic input:
+  - "You are a professional church interpreter. Translate the following Arabic text to natural, fluent Russian…"
+  - Idiom/proverb guardrail: find closest Russian equivalent; Arabic example: `الجمل لا يرى حدبته` → `Чья бы корова мычала, а твоя бы молчала`
+  - "Return only the translated text with no explanation."
+- **Rollback point**: git `b1ade2c` (English→Russian pipeline with idiom guardrails)
+
+### Translation engine migrated to Gemini 2.5 Flash-Lite (2026-07-04)
+- Replaced Google Translate v2 with Gemini 2.5 Flash-Lite streaming (`streamGenerateContent` SSE)
+- Deploy: `6a4948eb`; uses `GEMINI_API_KEY` (not `GOOGLE_TRANSLATE_API_KEY`)
+- A/B test site: https://crmi-translator-test-deepseek.netlify.app
+
+### Env key update
+| Key | Where stored |
+|---|---|
+| `GEMINI_API_KEY` | Netlify env vars (replaces Google Translate key in main pipeline) |
+
+---
+
 ## 2026-06-21
 
 ### Translation pipeline
