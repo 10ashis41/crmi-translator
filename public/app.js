@@ -34,7 +34,7 @@ const connStatus   = el("connStatus");
 
 let running    = false;
 let stream     = null;
-let inputLang  = "en";
+let inputLang  = "ar";
 let segCounter = 0;
 
 // Deepgram streaming state — one socket + one recorder per session.
@@ -76,8 +76,8 @@ player.autoplay = false;
 function setDot(dot, state) { dot.className = "dot" + (state ? " " + state : ""); }
 function showError(msg) { errorBox.textContent = msg || ""; if (msg) setDot(dotMic, "err"); }
 function setLangUI() {
-  sourceLabel.textContent = "English transcript";
-  sourceBox.classList.remove("rtl");
+  sourceLabel.textContent = "Arabic transcript";
+  sourceBox.classList.add("rtl");
 }
 function appendLine(box, text, cls) {
   const div = document.createElement("div");
@@ -341,7 +341,7 @@ async function openDeepgramSocket() {
   // 2) Open WebSocket to Deepgram Nova-3 (native streaming model).
   //    model=nova-3           — end-to-end streaming model; far better real-time
   //                             accuracy than whisper-large which runs batch internally.
-  //    detect_language=false  — locks to English; prevents mid-session drift.
+  //    detect_language=false  — locks to Arabic; prevents mid-session drift.
   //    smart_format=true      — automatic punctuation, capitalisation, numerals.
   //    interim_results=true   — streams live updates while speech is in progress.
   //    endpointing=300        — minimum VAD silence (ms) before a forced is_final.
@@ -349,7 +349,7 @@ async function openDeepgramSocket() {
   //    speech_final handled in onDeepgramMessage — fires without a silence gap.
   const params = new URLSearchParams({
     model:              "nova-3",
-    language:           "en",
+    language:           "ar",
     detect_language:    "false",
     smart_format:       "true",
     interim_results:    "true",
