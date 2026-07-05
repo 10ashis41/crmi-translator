@@ -191,8 +191,13 @@ const LATIN_ONLY_RE = /[^ -ɏḀ-ỿ\s.,!?;:'"()\-\d]/;
 // Arabic-script characters across the main Unicode blocks.
 const HAS_ARABIC_RE = /[؀-ۿݐ-ݿࢠ-ࣿﭐ-﷿ﹰ-﻿]/;
 
+// Minimum Deepgram confidence score accepted in Arabic mode.
+// Real Arabic speech scores ~0.8–0.99; English force-fitted into the Arabic
+// model scores ~0.3–0.6, so 0.7 reliably drops English without cutting real Arabic.
+const ARABIC_CONFIDENCE_MIN = 0.7;
+
 // Returns true if this transcript should be silently dropped (no translate/speak/display).
-function shouldDropTranscript(text) {
+function shouldDropTranscript(text, confidence = 1) {
   if (!text) return true;
 
   if (inputLang === "en") {
@@ -212,9 +217,11 @@ function shouldDropTranscript(text) {
   }
 
   if (inputLang === "ar") {
-    // Script lock — Arabic mode must contain at least one Arabic-script character.
-    // A Latin-only transcript means Deepgram transcribed the wrong language; drop.
+    // Script lock — must contain at least one Arabic-script character.
     if (!HAS_ARABIC_RE.test(text)) return true;
+
+    // Confidence gate — drops English speech that Deepgram force-fits into Arabic.
+    if (confidence < ARABIC_CONFIDENCE_MIN) return true;
   }
 
   return false;
@@ -439,6 +446,7 @@ function onDeepgramMessage(e) {
   const alt = msg.channel?.alternatives?.[0];
   if (!alt) return;
   const transcript = (alt.transcript || "").trim();
+  const confidence = alt.confidence ?? 1;
 
   const isFinal     = !!msg.is_final;
   const speechFinal = !!msg.speech_final;
@@ -463,13 +471,13 @@ function onDeepgramMessage(e) {
     return;
   }
 
-  flushPartial(transcript);
+  flushPartial(transcript, confidence);
 }
 
 // Commit a transcript: update display, run language/profanity checks, enqueue pipeline.
-function flushPartial(transcript) {
+function flushPartial(transcript, confidence = 1) {
   partialText = "";
-  const drop = shouldDropTranscript(transcript);
+  const drop = shouldDropTranscript(transcript, confidence);
   if (partialLine) {
     if (drop) { partialLine.remove(); }
     else { partialLine.textContent = transcript; partialLine.classList.remove("pending"); }
