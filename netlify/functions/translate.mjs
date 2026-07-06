@@ -19,16 +19,13 @@ const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MO
 const TARGET_LANG = process.env.TARGET_LANG || "ru";
 
 const SYSTEM_PROMPT =
-  "You are a professional church interpreter. Translate the following Arabic " +
+  "You are a professional church interpreter. Translate the following English " +
   "text to natural, fluent Russian as it would be spoken in a Christian church " +
   "service. Preserve religious terminology, phrases, and the speaker's tone.\n\n" +
   "When you encounter an idiom, proverb, or figure of speech in the source text, " +
   "do not translate it literally or invent a new phrase. Instead, use the closest " +
   "existing equivalent idiom or proverb that is actually used in Russian. Only fall " +
   "back to a literal/explanatory translation if no equivalent idiom exists.\n\n" +
-  "Example: Arabic 'الجمل لا يرى حدبته' (the camel doesn't see his own hump, " +
-  "equivalent to 'the pot calling the kettle black') → Russian: " +
-  "'Чья бы корова мычала, а твоя бы молчала'\n\n" +
   "Return only the translated text with no explanation.";
 
 const json = (body, status = 200) =>

@@ -34,7 +34,7 @@ const connStatus   = el("connStatus");
 
 let running    = false;
 let stream     = null;
-let inputLang  = "ar";
+let inputLang  = "en";
 let segCounter = 0;
 
 // Deepgram streaming state — one socket + one recorder per session.
@@ -76,8 +76,8 @@ player.autoplay = false;
 function setDot(dot, state) { dot.className = "dot" + (state ? " " + state : ""); }
 function showError(msg) { errorBox.textContent = msg || ""; if (msg) setDot(dotMic, "err"); }
 function setLangUI() {
-  sourceLabel.textContent = "Arabic transcript";
-  sourceBox.classList.add("rtl");
+  sourceLabel.textContent = "English transcript";
+  sourceBox.classList.remove("rtl");
 }
 function appendLine(box, text, cls) {
   const div = document.createElement("div");
@@ -356,7 +356,7 @@ async function openDeepgramSocket() {
   //    speech_final handled in onDeepgramMessage — fires without a silence gap.
   const params = new URLSearchParams({
     model:              "nova-3",
-    language:           "ar-JO",
+    language:           "en",
     detect_language:    "false",
     smart_format:       "true",
     interim_results:    "true",
