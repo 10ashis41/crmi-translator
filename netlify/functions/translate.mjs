@@ -64,16 +64,26 @@ export default async (req) => {
   };
 
   const params = new URLSearchParams({ alt: "sse", key: apiKey });
+  const url = `${GEMINI_URL}?${params}`;
+  const fetchOpts = {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(reqBody),
+  };
 
+  // Retry up to 3 times on 429 / 503 with exponential backoff.
   let resp;
-  try {
-    resp = await fetch(`${GEMINI_URL}?${params}`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(reqBody),
-    });
-  } catch (err) {
-    return json({ error: `Could not reach Gemini: ${err.message}` }, 502);
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      resp = await fetch(url, fetchOpts);
+    } catch (err) {
+      return json({ error: `Could not reach Gemini: ${err.message}` }, 502);
+    }
+    if (resp.status !== 429 && resp.status !== 503) break;
+    const retryAfterMs = parseInt(resp.headers.get("Retry-After") || "0", 10) * 1000
+      || (2 ** attempt) * 1000;
+    console.error(`Gemini ${resp.status} on attempt ${attempt + 1}; retrying after ${retryAfterMs}ms`);
+    await new Promise((r) => setTimeout(r, retryAfterMs));
   }
 
   if (!resp.ok || !resp.body) {
