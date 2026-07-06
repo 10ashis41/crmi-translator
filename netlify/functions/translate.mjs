@@ -78,6 +78,7 @@ export default async (req) => {
 
   if (!resp.ok || !resp.body) {
     const detail = await resp.text().catch(() => "");
+    console.error(`Gemini error: status=${resp.status} body=${detail}`);
     return json({ error: "Gemini API error", status: resp.status, detail }, resp.status || 502);
   }
 
@@ -120,6 +121,7 @@ export default async (req) => {
     const tail = buffer.trim();
     if (tail.startsWith("data:")) consumeChunk(tail.slice(5).trim());
   } catch (err) {
+    console.error(`Gemini stream error: ${err.message}`);
     return json({ error: `Gemini stream error: ${err.message}` }, 502);
   }
 
