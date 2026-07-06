@@ -356,7 +356,7 @@ async function openDeepgramSocket() {
   //    speech_final handled in onDeepgramMessage — fires without a silence gap.
   const params = new URLSearchParams({
     model:              "nova-3",
-    language:           "ar",
+    language:           "ar-JO",
     detect_language:    "false",
     smart_format:       "true",
     interim_results:    "true",
