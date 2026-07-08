@@ -3,20 +3,17 @@
 // Returns: { text, source, target }
 //
 // Translation is done by Google's Gemini 2.5 Flash-Lite model (Generative
-// Language API) server-side. We call the STREAMING endpoint (streamGenerateContent
-// with alt=sse) and consume tokens as they arrive, so generation begins flowing
-// immediately instead of waiting for the full response. The assembled text is
-// then returned as the same JSON shape the previous Google Translate call used,
-// so public/app.js needs zero changes (it reads `.json().text` and feeds the
-// full string to /api/speak for TTS).
+// Language API) server-side.  Uses the non-streaming generateContent endpoint
+// for lowest latency on short church-service utterances.
 //
 // API key: prefers GEMINI_API_KEY, falls back to the existing
 // GOOGLE_TRANSLATE_API_KEY. Whichever key is set must have the Generative
 // Language API ("generativelanguage.googleapis.com") enabled.
 
 const MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash-lite";
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:streamGenerateContent`;
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
 const TARGET_LANG = process.env.TARGET_LANG || "ru";
+const TIMEOUT_MS = 12000;  // Netlify functions have a 26 s max; fail fast at 12 s
 
 const SYSTEM_PROMPT =
   "You are a professional church interpreter. Translate the following English " +
@@ -52,30 +49,40 @@ export default async (req) => {
   const source = (payload.source || "en").toString().toLowerCase();
   const target = (payload.target || TARGET_LANG).toString().toLowerCase();
 
-  if (!text) return json({ text: "", source, target }); // nothing to translate
+  if (!text) return json({ text: "", source, target });
 
   const reqBody = {
     system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
     contents: [{ role: "user", parts: [{ text }] }],
-    generationConfig: { temperature: 0.3 },
+    generationConfig: {
+      temperature: 0.3,
+      maxOutputTokens: 400,
+    },
   };
 
-  const params = new URLSearchParams({ alt: "sse", key: apiKey });
+  const params = new URLSearchParams({ key: apiKey });
   const url = `${GEMINI_URL}?${params}`;
-  const fetchOpts = {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(reqBody),
-  };
 
   // Retry up to 3 times on 429 / 503 with exponential backoff.
   let resp;
   for (let attempt = 0; attempt < 3; attempt++) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
     try {
-      resp = await fetch(url, fetchOpts);
+      resp = await fetch(url, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(reqBody),
+        signal: controller.signal,
+      });
     } catch (err) {
-      return json({ error: `Could not reach Gemini: ${err.message}` }, 502);
+      clearTimeout(timer);
+      const msg = err.name === "AbortError"
+        ? `Gemini timed out after ${TIMEOUT_MS / 1000}s`
+        : `Could not reach Gemini: ${err.message}`;
+      return json({ error: msg }, 502);
     }
+    clearTimeout(timer);
     if (resp.status !== 429 && resp.status !== 503) break;
     const retryAfterMs = parseInt(resp.headers.get("Retry-After") || "0", 10) * 1000
       || (2 ** attempt) * 1000;
@@ -83,54 +90,29 @@ export default async (req) => {
     await new Promise((r) => setTimeout(r, retryAfterMs));
   }
 
-  if (!resp.ok || !resp.body) {
+  if (!resp.ok) {
     const detail = await resp.text().catch(() => "");
     console.error(`Gemini error: status=${resp.status} body=${detail}`);
-    return json({ error: "Gemini API error", status: resp.status, detail }, resp.status || 502);
+    // Surface the HTTP status so the operator can distinguish key/quota errors (401/403/429)
+    // from transient network errors (502/503).
+    return json(
+      { error: `Gemini API error (HTTP ${resp.status})`, detail },
+      resp.status >= 500 ? 502 : resp.status,
+    );
   }
 
-  // Consume the SSE stream as it arrives, accumulating text tokens.
-  // Each event is a line beginning with "data: " carrying a JSON chunk whose
-  // candidates[0].content.parts[*].text holds the incremental translation.
-  const reader = resp.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = "";
-  let translated = "";
-
-  const consumeChunk = (jsonStr) => {
-    let obj;
-    try {
-      obj = JSON.parse(jsonStr);
-    } catch {
-      return; // ignore keep-alive / non-JSON lines
-    }
-    const parts = obj?.candidates?.[0]?.content?.parts;
-    if (Array.isArray(parts)) {
-      for (const p of parts) if (typeof p?.text === "string") translated += p.text;
-    }
-  };
-
+  let data;
   try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-
-      // SSE events are separated by blank lines; process complete lines.
-      let nl;
-      while ((nl = buffer.indexOf("\n")) !== -1) {
-        const line = buffer.slice(0, nl).replace(/\r$/, "");
-        buffer = buffer.slice(nl + 1);
-        if (line.startsWith("data:")) consumeChunk(line.slice(5).trim());
-      }
-    }
-    // Flush any trailing buffered line.
-    const tail = buffer.trim();
-    if (tail.startsWith("data:")) consumeChunk(tail.slice(5).trim());
+    data = await resp.json();
   } catch (err) {
-    console.error(`Gemini stream error: ${err.message}`);
-    return json({ error: `Gemini stream error: ${err.message}` }, 502);
+    console.error(`Gemini JSON parse error: ${err.message}`);
+    return json({ error: `Gemini returned invalid JSON: ${err.message}` }, 502);
   }
+
+  const parts = data?.candidates?.[0]?.content?.parts;
+  const translated = Array.isArray(parts)
+    ? parts.map((p) => (typeof p?.text === "string" ? p.text : "")).join("")
+    : "";
 
   return json({ text: translated.trim(), source, target });
 };

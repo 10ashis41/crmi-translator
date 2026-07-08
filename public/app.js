@@ -465,7 +465,12 @@ function onDeepgramMessage(e) {
   // is_final fires on VAD silence (endpointing).  Both can arrive together.
   // Dedup: if is_final carries the exact text we already committed via speech_final,
   // discard it — the speaker stopped after the sentence boundary.
-  if (transcript && transcript === lastCommittedText) {
+  // Empty final: silence boundary detected but no speech transcribed.
+  // Clear partialText without erasing the pending line — it belongs to
+  // the next utterance already streaming in from Deepgram.
+  if (!transcript) { partialText = ""; return; }
+
+  if (transcript === lastCommittedText) {
     partialText = "";
     if (partialLine) { partialLine.remove(); partialLine = null; }
     return;
@@ -565,7 +570,11 @@ function playAudio(blob) {
 }
 
 async function safeErr(resp) {
-  try { const j = await resp.json(); return j.error || resp.status; } catch { return resp.status; }
+  try {
+    const j = await resp.json();
+    const base = j.error || `HTTP ${resp.status}`;
+    return j.detail ? `${base} — ${String(j.detail).slice(0, 120)}` : base;
+  } catch { return `HTTP ${resp.status}`; }
 }
 
 // ---------- Start / Stop -----------------------------------------------------
