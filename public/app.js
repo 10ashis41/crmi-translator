@@ -196,24 +196,33 @@ const HAS_ARABIC_RE = /[؀-ۿݐ-ݿࢠ-ࣿﭐ-﷿ﹰ-﻿]/;
 // model scores ~0.3–0.6, so 0.7 reliably drops English without cutting real Arabic.
 const ARABIC_CONFIDENCE_MIN = 0.7;
 
+// Single-word church exclamations that are always passed through regardless of
+// the word-count minimum — Deepgram transcribes these cleanly and they are
+// spiritually significant in a service context.
+const CHURCH_ONEWORD = /^(amen|hallelujah|alleluia|hosanna|maranatha|selah|shalom|gloria|sanctus)\.?$/i;
+
 // Returns true if this transcript should be silently dropped (no translate/speak/display).
 function shouldDropTranscript(text, confidence = 1) {
   if (!text) return true;
 
   if (inputLang === "en") {
-    // 1. Minimum length — reject single-word noise bursts.
-    if (text.trim().split(/\s+/).filter(Boolean).length < 3) return true;
+    const trimmed = text.trim();
+    const words = trimmed.split(/\s+/).filter(Boolean);
+
+    // 1. Minimum length — reject noise bursts shorter than 2 words, UNLESS the
+    //    single word is a recognised church exclamation (Amen, Hallelujah, etc.).
+    if (words.length < 2 && !CHURCH_ONEWORD.test(trimmed)) return true;
 
     // 2. Script lock — English mode must be Latin-only. Any non-Latin character
     //    (Arabic, Cyrillic, CJK…) means Deepgram drifted; drop the segment.
-    if (LATIN_ONLY_RE.test(text)) return true;
+    if (LATIN_ONLY_RE.test(trimmed)) return true;
 
     // 3. Profanity — common English swear words (whole-word match).
-    if (PROFANITY_RE.test(text)) return true;
+    if (PROFANITY_RE.test(trimmed)) return true;
 
     // 4. Arabic-phoneme false positives — Arabic words that English STT engines
     //    romanise into English-looking text that resembles profanity.
-    if (ARABIC_PHONEME_RE.test(text)) return true;
+    if (ARABIC_PHONEME_RE.test(trimmed)) return true;
   }
 
   if (inputLang === "ar") {
@@ -363,6 +372,27 @@ async function openDeepgramSocket() {
     endpointing:        "300",
     utterance_end_ms:   "1500",
   });
+
+  // Boost recognition probability for church-specific terms that STT engines
+  // frequently mishear. Format: "word:boost" where boost is 1–10.
+  // Biblical books with unusual pronunciation get the highest boost (7).
+  const KEYTERMS = [
+    // Hard-to-transcribe biblical books
+    "Corinthians:7", "Thessalonians:7", "Deuteronomy:7", "Ecclesiastes:7",
+    "Philippians:7", "Galatians:7", "Ephesians:7", "Colossians:7",
+    "Hebrews:7", "Proverbs:6", "Habakkuk:7", "Zephaniah:7", "Haggai:7",
+    "Malachi:6", "Lamentations:7", "Nehemiah:6",
+    // Theological terms often mangled
+    "sanctification:6", "righteousness:5", "justification:6",
+    "redemption:5", "atonement:6", "repentance:5", "intercession:6",
+    "Gethsemane:7", "Golgotha:7", "Calvary:5", "Bethlehem:5",
+    "Nazareth:5", "Galilee:5", "Jerusalem:4",
+    // Common church service words
+    "hallelujah:5", "alleluia:5", "hosanna:6", "maranatha:6",
+    "Amen:4", "selah:6", "shalom:5",
+  ];
+  for (const kt of KEYTERMS) params.append("keyterm", kt);
+
   dgSocket = new WebSocket(
     `wss://api.deepgram.com/v1/listen?${params}`,
     ["token", key],
