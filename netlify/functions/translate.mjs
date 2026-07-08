@@ -33,7 +33,8 @@ const SYSTEM_PROMPT =
   "• worship → поклонение  • praise → хвала  • glory → слава\n" +
   "• baptism → крещение  • communion → причастие  • resurrection → воскресение\n" +
   "• salvation → спасение  • eternal life → жизнь вечная  • sin → грех\n" +
-  "• born again → рождённый свыше  • believe → веровать  • faith → вера\n\n" +
+  "• born again → рождённый свыше  • believe → веровать  • faith → вера\n" +
+  "• lift/raise hands → воздеть руки  • hands raised → воздетые руки\n\n" +
   "PLACE NAMES: Transliterate consistently — Gethsemane → Гефсимания, " +
   "Golgotha → Голгофа, Calvary → Голгофа, Galilee → Галилея, " +
   "Bethlehem → Вифлеем, Nazareth → Назарет, Jerusalem → Иерусалим.\n\n" +

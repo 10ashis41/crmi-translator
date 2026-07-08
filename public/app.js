@@ -32,10 +32,12 @@ const queueCount   = el("queueCount");
 const muteBtn      = el("muteBtn");
 const connStatus   = el("connStatus");
 
-let running    = false;
-let stream     = null;
-let inputLang  = "en";
-let segCounter = 0;
+let running      = false;
+let stream       = null;
+let inputLang    = "en";
+let segCounter   = 0;
+let segments     = [];   // { en, ru } pairs captured this session
+let sessionStart = null; // Date when the current session started
 
 // Deepgram streaming state — one socket + one recorder per session.
 let dgSocket      = null;   // WebSocket to Deepgram
@@ -569,6 +571,7 @@ async function fetchTranslateSpeak(text) {
   const ru = (await tl.json()).text || "";
   if (!ru) return null;
   appendLine(russianBox, ru);
+  segments.push({ en: text, ru });
 
   // 2) Speak -> Russian MP3 (ElevenLabs, 1.3x speed set server-side)
   const sp = await fetch("/api/speak", {
@@ -617,9 +620,11 @@ async function start() {
   await refreshDevices();
   await applySink();
 
-  running     = true;
-  segCounter  = 0;
-  muted       = false;
+  running      = true;
+  segCounter   = 0;
+  muted        = false;
+  segments     = [];
+  sessionStart = new Date();
   startStopBtn.textContent = "Stop";
   startStopBtn.classList.add("recording");
   setDot(dotMic,   "busy");    // "connecting..."
@@ -687,6 +692,41 @@ function stop() {
 }
 
 startStopBtn.addEventListener("click", () => (running ? stop() : start()));
+
+// ---------- Transcript download ----------------------------------------------
+function downloadTranscript() {
+  if (!segments.length) {
+    showError("No transcript to download yet.");
+    return;
+  }
+  const started = sessionStart
+    ? sessionStart.toLocaleString(undefined, { dateStyle: "full", timeStyle: "short" })
+    : "unknown";
+  const lines = [
+    "CRMI Live Translator — Session Transcript",
+    `Started: ${started}`,
+    `Segments: ${segments.length}`,
+    "",
+    ...segments.flatMap(({ en, ru }, i) => [
+      `[${i + 1}]`,
+      `EN: ${en}`,
+      `RU: ${ru}`,
+      "",
+    ]),
+  ];
+  const blob = new Blob([lines.join("\n")], { type: "text/plain;charset=utf-8" });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+  const ts   = sessionStart
+    ? sessionStart.toISOString().slice(0, 16).replace("T", "-").replace(":", "-")
+    : "transcript";
+  a.href     = url;
+  a.download = `crmi-transcript-${ts}.txt`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+el("downloadBtn")?.addEventListener("click", downloadTranscript);
 
 // Clock + init
 setInterval(() => { el("clock").textContent = new Date().toLocaleTimeString(); }, 1000);
