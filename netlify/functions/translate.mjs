@@ -38,7 +38,12 @@ const SYSTEM_PROMPT =
   "PLACE NAMES: Transliterate consistently — Gethsemane → Гефсимания, " +
   "Golgotha → Голгофа, Calvary → Голгофа, Galilee → Галилея, " +
   "Bethlehem → Вифлеем, Nazareth → Назарет, Jerusalem → Иерусалим.\n\n" +
-  "OUTPUT: Return only the translated Russian text. No explanations, no notes, no alternatives.";
+  "OUTPUT: Return only the translated Russian text. No explanations, no notes, no alternatives.\n\n" +
+  "STT CORRECTION: The input is a live Deepgram transcript and may contain speech-to-text errors. " +
+  "Before translating, silently correct obvious mishearings of biblical names, theological terms, and place names — " +
+  "e.g. 'cavalry' → Calvary, 'get some money' / 'Geth seminary' → Gethsemane, 'the saloni ans' → Thessalonians, " +
+  "'have a coke' / 'Haba cook' → Habakkuk, 'ecclesiastics' → Ecclesiastes. " +
+  "Only fix unambiguous STT artifacts on known church vocabulary; leave everything else exactly as transcribed.";
 
 const json = (body, status = 200) =>
   new Response(JSON.stringify(body), {
