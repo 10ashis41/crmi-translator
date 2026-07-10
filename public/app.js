@@ -567,10 +567,14 @@ function enqueueTranscript(text) {
 
 async function fetchTranslateSpeak(text) {
   // 1) Translate -> Russian
+  // Pass the last 3 committed segments as rolling context so Gemini can resolve
+  // pronouns, maintain register, and preserve topic-specific terminology across
+  // utterances. No latency added — context is read from already-settled state.
+  const context = segments.slice(-3);
   const tl = await fetch("/api/translate", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ text, source: inputLang, target: "ru" }),
+    body: JSON.stringify({ text, source: inputLang, target: "ru", context }),
   });
   if (!tl.ok) throw new Error("Translate failed: " + (await safeErr(tl)));
   const ru = (await tl.json()).text || "";

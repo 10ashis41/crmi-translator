@@ -66,9 +66,30 @@ export default async (req) => {
 
   if (!text) return json({ text: "", source, target });
 
+  // Build the user turn — prepend rolling context when the caller supplies it.
+  // context is [{en, ru}, ...] (up to 3 prior segments from this session).
+  // We show it to the model for coherence (pronouns, topic, register) but
+  // explicitly forbid re-outputting it; only the new segment must be translated.
+  const context = Array.isArray(payload.context)
+    ? payload.context.filter((c) => c && typeof c.en === "string" && typeof c.ru === "string")
+    : [];
+
+  let userTurn;
+  if (context.length > 0) {
+    const ctxBlock = context
+      .map((c) => `[EN] ${c.en.trim()}\n[RU] ${c.ru.trim()}`)
+      .join("\n\n");
+    userTurn =
+      `Recent sermon context (already translated — do NOT output these again):\n\n${ctxBlock}\n\n` +
+      `Translate ONLY the following new segment into Russian. ` +
+      `Return the Russian translation only, nothing else:\n${text}`;
+  } else {
+    userTurn = text;
+  }
+
   const reqBody = {
     system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
-    contents: [{ role: "user", parts: [{ text }] }],
+    contents: [{ role: "user", parts: [{ text: userTurn }] }],
     generationConfig: {
       temperature: 0.3,
       maxOutputTokens: 400,
