@@ -497,10 +497,14 @@ function onDeepgramMessage(e) {
   // is_final fires on VAD silence (endpointing).  Both can arrive together.
   // Dedup: if is_final carries the exact text we already committed via speech_final,
   // discard it — the speaker stopped after the sentence boundary.
-  // Empty final: silence boundary detected but no speech transcribed.
-  // Clear partialText without erasing the pending line — it belongs to
-  // the next utterance already streaming in from Deepgram.
-  if (!transcript) { partialText = ""; return; }
+  // Empty final: silence boundary detected but no speech transcribed. This can be
+  // the true end of the utterance already shown as pending (e.g. a short phrase
+  // followed by silence), so flush whatever's pending instead of stranding it grey.
+  if (!transcript) {
+    if (partialText && partialText !== lastCommittedText) flushPartial(partialText, confidence);
+    else partialText = "";
+    return;
+  }
 
   if (transcript === lastCommittedText) {
     partialText = "";
