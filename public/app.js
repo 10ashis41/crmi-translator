@@ -375,23 +375,24 @@ async function openDeepgramSocket() {
     utterance_end_ms:   "1500",
   });
 
-  // Boost recognition probability for church-specific terms that STT engines
-  // frequently mishear. Format: "word:boost" where boost is 1–10.
-  // Biblical books with unusual pronunciation get the highest boost (7).
+  // Boost recognition probability for church-specific terms that Nova-3's
+  // Keyterm Prompting frequently mishears. Nova-3 keyterms are plain words/
+  // phrases only — no ":boost" intensifier (that syntax is legacy Keywords,
+  // Nova-2 and earlier).
   const KEYTERMS = [
     // Hard-to-transcribe biblical books
-    "Corinthians:7", "Thessalonians:7", "Deuteronomy:7", "Ecclesiastes:7",
-    "Philippians:7", "Galatians:7", "Ephesians:7", "Colossians:7",
-    "Hebrews:7", "Proverbs:6", "Habakkuk:7", "Zephaniah:7", "Haggai:7",
-    "Malachi:6", "Lamentations:7", "Nehemiah:6",
+    "Corinthians", "Thessalonians", "Deuteronomy", "Ecclesiastes",
+    "Philippians", "Galatians", "Ephesians", "Colossians",
+    "Hebrews", "Proverbs", "Habakkuk", "Zephaniah", "Haggai",
+    "Malachi", "Lamentations", "Nehemiah",
     // Theological terms often mangled
-    "sanctification:6", "righteousness:5", "justification:6",
-    "redemption:5", "atonement:6", "repentance:5", "intercession:6",
-    "Gethsemane:7", "Golgotha:7", "Calvary:5", "Bethlehem:5",
-    "Nazareth:5", "Galilee:5", "Jerusalem:4",
+    "sanctification", "righteousness", "justification",
+    "redemption", "atonement", "repentance", "intercession",
+    "Gethsemane", "Golgotha", "Calvary", "Bethlehem",
+    "Nazareth", "Galilee", "Jerusalem",
     // Common church service words
-    "hallelujah:5", "alleluia:5", "hosanna:6", "maranatha:6",
-    "Amen:4", "selah:6", "shalom:5",
+    "hallelujah", "alleluia", "hosanna", "maranatha",
+    "Amen", "selah", "shalom",
   ];
   for (const kt of KEYTERMS) params.append("keyterm", kt);
 
