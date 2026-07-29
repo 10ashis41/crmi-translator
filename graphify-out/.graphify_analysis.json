@@ -1,0 +1,219 @@
+{
+  "communities": {
+    "0": [
+      "public_app",
+      "public_app_audiobuffer",
+      "public_app_connstatus",
+      "public_app_dotaudio",
+      "public_app_dotmic",
+      "public_app_dotproc",
+      "public_app_el",
+      "public_app_errorbox",
+      "public_app_inputselect",
+      "public_app_mutebtn",
+      "public_app_outputselect",
+      "public_app_playchain",
+      "public_app_player",
+      "public_app_queuecount",
+      "public_app_russianbox",
+      "public_app_segments",
+      "public_app_setlangui",
+      "public_app_sourcebox",
+      "public_app_sourcelabel",
+      "public_app_startstopbtn",
+      "public_app_syscheck",
+      "public_app_textqueue",
+      "public_app_volume",
+      "public_app_volval"
+    ],
+    "1": [
+      "public_app_applysink",
+      "public_app_audioconstraints",
+      "public_app_downloadtranscript",
+      "public_app_enqueuetranscript",
+      "public_app_playaudio",
+      "public_app_setdot",
+      "public_app_showerror",
+      "public_app_start",
+      "public_app_startmediarecorder",
+      "public_app_stop",
+      "public_app_switchinputdevice",
+      "public_app_togglemute",
+      "public_app_updatemuteui",
+      "public_app_updatequeueui"
+    ],
+    "2": [
+      "package",
+      "package_description",
+      "package_engines",
+      "package_engines_node",
+      "package_name",
+      "package_private",
+      "package_scripts",
+      "package_scripts_deploy",
+      "package_scripts_dev",
+      "package_type",
+      "package_version"
+    ],
+    "3": [
+      "public_app_connectdeepgram",
+      "public_app_opendeepgramsocket",
+      "public_app_reconnectloop",
+      "public_app_schedulesessionrefresh",
+      "public_app_showreconnecting",
+      "public_app_startkeepalive",
+      "public_app_triggerreconnect"
+    ],
+    "4": [
+      "public_app_appendline",
+      "public_app_fetchtranslatespeak",
+      "public_app_flushpartial",
+      "public_app_ondeepgrammessage",
+      "public_app_safeerr",
+      "public_app_shoulddroptranscript"
+    ],
+    "5": [
+      "netlify_functions_health",
+      "netlify_functions_health_json",
+      "netlify_functions_health_ping",
+      "netlify_functions_health_withtimeout"
+    ],
+    "6": [
+      "build_pro_py",
+      "project_notes_md"
+    ],
+    "7": [
+      "netlify_functions_deepgram_token",
+      "netlify_functions_deepgram_token_json"
+    ],
+    "8": [
+      "netlify_functions_realtime_token",
+      "netlify_functions_realtime_token_json"
+    ],
+    "9": [
+      "netlify_functions_speak",
+      "netlify_functions_speak_json"
+    ],
+    "10": [
+      "netlify_functions_transcribe",
+      "netlify_functions_transcribe_json"
+    ],
+    "11": [
+      "netlify_functions_translate",
+      "netlify_functions_translate_json"
+    ],
+    "12": [
+      "public_app_filldeviceselect",
+      "public_app_refreshdevices"
+    ],
+    "13": [
+      "smoke_test",
+      "smoke_test_sh__entry"
+    ],
+    "14": [
+      "deepgram_nova_3"
+    ],
+    "15": [
+      "elevenlabs_flash_v2_5"
+    ],
+    "16": [
+      "gemini_2_5_flash_lite"
+    ],
+    "17": [
+      "public_index_html"
+    ],
+    "18": [
+      "readme_md"
+    ]
+  },
+  "cohesion": {
+    "0": 0.08333333333333333,
+    "1": 0.2967032967032967,
+    "2": 0.18181818181818182,
+    "3": 0.42857142857142855,
+    "4": 0.4,
+    "5": 0.5,
+    "6": 1.0,
+    "7": 1.0,
+    "8": 1.0,
+    "9": 1.0,
+    "10": 1.0,
+    "11": 1.0,
+    "12": 1.0,
+    "13": 1.0,
+    "14": 1.0,
+    "15": 1.0,
+    "16": 1.0,
+    "17": 1.0,
+    "18": 1.0
+  },
+  "gods": [
+    {
+      "id": "public_app_showerror",
+      "label": "showError()",
+      "degree": 13
+    },
+    {
+      "id": "public_app_start",
+      "label": "start()",
+      "degree": 10
+    },
+    {
+      "id": "public_app_setdot",
+      "label": "setDot()",
+      "degree": 9
+    },
+    {
+      "id": "public_app_opendeepgramsocket",
+      "label": "openDeepgramSocket()",
+      "degree": 9
+    },
+    {
+      "id": "public_app_flushpartial",
+      "label": "flushPartial()",
+      "degree": 6
+    },
+    {
+      "id": "public_app_enqueuetranscript",
+      "label": "enqueueTranscript()",
+      "degree": 6
+    },
+    {
+      "id": "public_app_stop",
+      "label": "stop()",
+      "degree": 6
+    },
+    {
+      "id": "public_app_switchinputdevice",
+      "label": "switchInputDevice()",
+      "degree": 5
+    },
+    {
+      "id": "public_app_updatemuteui",
+      "label": "updateMuteUI()",
+      "degree": 5
+    },
+    {
+      "id": "public_app_startmediarecorder",
+      "label": "startMediaRecorder()",
+      "degree": 5
+    }
+  ],
+  "surprises": [
+    {
+      "source": "Project Notes",
+      "target": "ProPresenter Song Builder",
+      "source_files": [
+        "PROJECT_NOTES.md",
+        "build-pro.py"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "references",
+      "why": "crosses file types (doc \u2194 code); connects across different repos/directories"
+    }
+  ],
+  "tokens": {
+    "input": 6433,
+    "output": 1620
+  }
+}
