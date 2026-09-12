@@ -188,7 +188,7 @@ const ARABIC_PHONEME_RE = /\b(?:fa+k+|f[ae]+kk?|ni+k+|na+a+k+|zi+bb?|ku+ss?|ke+s
 
 // Latin-script characters: Basic Latin + Latin Supplement (U+0000-U+024F)
 // and Latin Extended Additional (U+1E00-U+1EFF).
-const LATIN_ONLY_RE = /[^ -ɏḀ-ỿ\s.,!?;:'"()\-\d]/;
+const LATIN_ONLY_RE = /[^\u0000-\u024F\u1E00-\u1EFF\s.,!?;:'"()\-\d]/;
 
 // Arabic-script characters across the main Unicode blocks.
 const HAS_ARABIC_RE = /[؀-ۿݐ-ݿࢠ-ࣿﭐ-﷿ﹰ-﻿]/;
@@ -393,6 +393,15 @@ async function openDeepgramSocket() {
     // Common church service words
     "hallelujah", "alleluia", "hosanna", "maranatha",
     "Amen", "selah", "shalom",
+    // Gospel/Acts place names commonly mangled (e.g. "Emmaus" -> "a mouse")
+    "Emmaus", "Capernaum", "Samaria", "Bethany", "Bethsaida",
+    "Nazarene", "Damascus", "Antioch", "Ephesus", "Corinth",
+    "Macedonia", "Philippi", "Cyrene", "Tarsus", "Gennesaret",
+    "Sinai", "Canaan",
+    // Names commonly mangled
+    "Nicodemus", "Zacchaeus", "Bartimaeus", "Barabbas",
+    "Melchizedek", "Nebuchadnezzar", "Methuselah", "Beelzebub",
+    "Pharisees", "Sadducees", "Sanhedrin", "Immanuel",
   ];
   for (const kt of KEYTERMS) params.append("keyterm", kt);
 

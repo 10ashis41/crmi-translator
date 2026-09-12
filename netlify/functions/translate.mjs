@@ -42,7 +42,9 @@ const SYSTEM_PROMPT =
   "STT CORRECTION: The input is a live Deepgram transcript and may contain speech-to-text errors. " +
   "Before translating, silently correct obvious mishearings of biblical names, theological terms, and place names — " +
   "e.g. 'cavalry' → Calvary, 'get some money' / 'Geth seminary' → Gethsemane, 'the saloni ans' → Thessalonians, " +
-  "'have a coke' / 'Haba cook' → Habakkuk, 'ecclesiastics' → Ecclesiastes. " +
+  "'have a coke' / 'Haba cook' → Habakkuk, 'ecclesiastics' → Ecclesiastes, " +
+  "'on the road to a mouse' / 'a mouse' → Emmaus (as in 'the road to Emmaus'), " +
+  "'zack ee us' → Zacchaeus, 'nick oh deem us' → Nicodemus, 'sand hedrin' → Sanhedrin. " +
   "Only fix unambiguous STT artifacts on known church vocabulary; leave everything else exactly as transcribed.";
 
 const json = (body, status = 200) =>
